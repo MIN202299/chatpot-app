@@ -1,33 +1,40 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { chatApi } from './request'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [message, setMessage] = useState([
+    {role: 'system', content: '你是一个有用的人工助手'}
+  ])
+  const [question, setQuestion] = useState('')
+  const [loading, setLoading] = useState(false)
+  function handleInput(e) {
+    setQuestion(e.target.value)
+  }
+  async function sendMessage() {
+    if (loading) return;
+    setLoading(true)
+    const newMessage = [...message, {role: 'user', content: question}]
+    try {
+      const data: any = await chatApi.post('/message', newMessage)
+      setMessage([...newMessage, data.choices[0].message])
+      setQuestion('')
+    } catch(e) {}
+      finally {
+        setLoading(false)
+      }
 
+  }
   return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className='m-chatpot'>
+      <div className={loading ? 'm-loading' : 'm-hidden'}>正在生成。。。</div>
+      { message.map((item, idx) => {
+        return <p key={idx}><strong>{ item.role }:</strong>{ item.content }</p>
+      }) }
+      <div className='m-bottom'>
+        <input type="text" onInput={handleInput} value={question} />
+        <button onClick={sendMessage}>发送</button>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </div>
   )
 }
